@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Check</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Morning Check">
+<meta name="theme-color" content="#0a0a0f">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent-green: #00ff88;
+    --accent-red: #ff3355;
+    --accent-yellow: #ffcc00;
+    --accent-blue: #4488ff;
+    --text: #e0e0f0;
+    --muted: #555570;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  h1 span {
+    color: var(--accent-green);
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* VERDICT BAR */
+  .verdict-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .verdict-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .verdict-content { flex: 1; }
+
+  .verdict-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .verdict-text {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .verdict-text.go { color: var(--accent-green); }
+  .verdict-text.caution { color: var(--accent-yellow); }
+  .verdict-text.stop { color: var(--accent-red); }
+
+  .verdict-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .verdict-reset {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .verdict-reset:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+
+  /* INDICATOR CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px 12px;
+    align-items: start;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+
+  .card.ok::before { background: var(--accent-green); }
+  .card.warn::before { background: var(--accent-yellow); }
+  .card.danger::before { background: var(--accent-red); }
+
+  .card:hover { border-color: #2e2e4e; }
+
+  .card-name {
+    font-weight: 700;
+    font-size: 15px;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .card-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--muted);
+    grid-column: 1 / 2;
+    grid-row: 2;
+    line-height: 1.5;
+  }
+
+  .card-status {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .status-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.15s;
+    opacity: 0.4;
+  }
+
+  .btn-ok { background: #00ff8820; color: var(--accent-green); }
+  .btn-warn { background: #ffcc0020; color: var(--accent-yellow); }
+  .btn-danger { background: #ff335520; color: var(--accent-red); }
+
+  .btn.active { opacity: 1; }
+  .btn-ok.active { background: #00ff8830; }
+  .btn-warn.active { background: #ffcc0030; }
+  .btn-danger.active { background: #ff335530; }
+
+  .threshold {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .threshold .t-ok { color: var(--accent-green); }
+  .threshold .t-warn { color: var(--accent-yellow); }
+  .threshold .t-bad { color: var(--accent-red); }
+
+  /* RULE BOX */
+  .rule-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .rule-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .rule-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .rule-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .rule-dot.green { background: var(--accent-green); }
+  .rule-dot.yellow { background: var(--accent-yellow); }
+  .rule-dot.red { background: var(--accent-red); }
+
+  .rule-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .rule-text strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* SCORE */
+  .score-display {
+    text-align: center;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+
+  .score-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+    transition: color 0.3s;
+  }
+
+  .score-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .score-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px 0 8px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease, background 0.3s;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 32px;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Morning Check</div>
+  <h1>台股開盤前 <span>快速檢查</span></h1>
+  <div class="subtitle">每天開盤前掃一遍，決定是否照 AI 建議執行</div>
+</header>
+
+<!-- SCORE -->
+<div class="score-display">
+  <div class="score-label">警示分數（越低越安全）</div>
+  <div class="score-num" id="scoreNum">—</div>
+  <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+  <div class="score-label" id="scoreHint">請完成所有指標後查看</div>
+</div>
+
+<!-- VERDICT -->
+<div class="verdict-bar" id="verdictBar">
+  <div class="verdict-icon" id="verdictIcon">📋</div>
+  <div class="verdict-content">
+    <div class="verdict-label">今日建議操作</div>
+    <div class="verdict-text" id="verdictText">尚未完成檢查</div>
+    <div class="verdict-hint" id="verdictHint">請依序標記上方所有指標</div>
+  </div>
+  <button class="verdict-reset" onclick="resetAll()">重置</button>
+</div>
+
+<!-- SECTION 1: 美股大盤 -->
+<div class="section">
+  <div class="section-title">① 美股大盤（昨晚收盤）</div>
+
+  <div class="card" id="c-dow">
+    <div>
+      <div class="card-name">道瓊工業指數 <span class="card-tag">DJIA</span></div>
+      <div class="card-desc">傳統權值股指標，反映市場整體情緒</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-dow','ok',this)">漲</button>
+        <button class="btn btn-warn" onclick="setCard('c-dow','warn',this)">小跌</button>
+        <button class="btn btn-danger" onclick="setCard('c-dow','danger',this)">大跌</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▲ 安全</span> / <span class="t-warn">▼ &lt;1.5%</span> / <span class="t-bad">▼ &gt;1.5%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-nas">
+    <div>
+      <div class="card-name">那斯達克指數 <span class="card-tag">NASDAQ</span></div>
+      <div class="card-desc">科技股為主，對台灣電子股影響大</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-nas','ok',this)">漲</button>
+        <button class="btn btn-warn" onclick="setCard('c-nas','warn',this)">小跌</button>
+        <button class="btn btn-danger" onclick="setCard('c-nas','danger',this)">大跌</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▲ 安全</span> / <span class="t-warn">▼ &lt;2%</span> / <span class="t-bad">▼ &gt;2%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: 關鍵指標 -->
+<div class="section">
+  <div class="section-title">② 關鍵技術指標</div>
+
+  <div class="card" id="c-sox">
+    <div>
+      <div class="card-name">費城半導體指數 <span class="card-tag">SOX</span></div>
+      <div class="card-desc">台積電、聯發科等權值股的最強連動指標，比道瓊更重要</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-sox','ok',this)">漲</button>
+        <button class="btn btn-warn" onclick="setCard('c-sox','warn',this)">小跌</button>
+        <button class="btn btn-danger" onclick="setCard('c-sox','danger',this)">大跌</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▲ 安全</span> / <span class="t-warn">▼ &lt;2%</span> / <span class="t-bad">▼ &gt;2%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-vix">
+    <div>
+      <div class="card-name">VIX 恐慌指數 <span class="card-tag">CBOE VIX</span></div>
+      <div class="card-desc">市場恐慌程度，數值越高越危險</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-vix','ok',this)">&lt;20</button>
+        <button class="btn btn-warn" onclick="setCard('c-vix','warn',this)">20–30</button>
+        <button class="btn btn-danger" onclick="setCard('c-vix','danger',this)">&gt;30</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">&lt;20 正常</span> / <span class="t-warn">20–30 留意</span> / <span class="t-bad">&gt;30 危險</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-nvda">
+    <div>
+      <div class="card-name">輝達盤後 <span class="card-tag">NVDA After-Hours</span></div>
+      <div class="card-desc">AI 族群連動指標，持 AI / 伺服器相關股必看</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-nvda','ok',this)">漲/平</button>
+        <button class="btn btn-warn" onclick="setCard('c-nvda','warn',this)">小跌</button>
+        <button class="btn btn-danger" onclick="setCard('c-nvda','danger',this)">大跌</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▲ 安全</span> / <span class="t-warn">▼ &lt;3%</span> / <span class="t-bad">▼ &gt;3%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: 匯率 / 資金 -->
+<div class="section">
+  <div class="section-title">③ 匯率與資金流向</div>
+
+  <div class="card" id="c-dxy">
+    <div>
+      <div class="card-name">美元指數 <span class="card-tag">DXY</span></div>
+      <div class="card-desc">美元強 → 外資易匯出台灣 → 台股偏空<br>
+        <span style="color:#4488ff;font-size:11px;">📌 怎麼看：數字比昨天<b>高</b> = 美元變強。漲超過 0.5% 標紅，微漲標黃，持平或跌標綠</span>
+      </div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-dxy','ok',this)">弱/平</button>
+        <button class="btn btn-warn" onclick="setCard('c-dxy','warn',this)">微強</button>
+        <button class="btn btn-danger" onclick="setCard('c-dxy','danger',this)">明顯強</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▼ 利多</span> / <span class="t-warn">&lt;0.5%</span> / <span class="t-bad">&gt;0.5%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-jpy">
+    <div>
+      <div class="card-name">日圓匯率 <span class="card-tag">USD/JPY</span></div>
+      <div class="card-desc">日圓急升 = 避險情緒升溫 → 台股偏空<br>
+        <span style="color:#4488ff;font-size:11px;">📌 怎麼看：數字<b>反直覺</b>。例如 152→149 是日圓<b>升值</b>（數字變小才是日圓強）。一天內變動超過 1.5 標紅</span>
+      </div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-jpy','ok',this)">穩定</button>
+        <button class="btn btn-warn" onclick="setCard('c-jpy','warn',this)">微動</button>
+        <button class="btn btn-danger" onclick="setCard('c-jpy','danger',this)">急升</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">變動&lt;0.5</span> / <span class="t-warn">0.5–1.5</span> / <span class="t-bad">&gt;1.5</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: 台指期 -->
+<div class="section">
+  <div class="section-title">④ 台指期夜盤（最直接）</div>
+
+  <div class="card" id="c-txi">
+    <div>
+      <div class="card-name">台指期夜盤 <span class="card-tag">TX Night</span></div>
+      <div class="card-desc">最直接反映隔天開盤方向，開盤前看這個最準</div>
+    </div>
+    <div class="card-status">
+      <div class="status-btns">
+        <button class="btn btn-ok" onclick="setCard('c-txi','ok',this)">漲/平</button>
+        <button class="btn btn-warn" onclick="setCard('c-txi','warn',this)">小跌</button>
+        <button class="btn btn-danger" onclick="setCard('c-txi','danger',this)">大跌</button>
+      </div>
+      <div class="threshold">
+        <span class="t-ok">▲ 跟進</span> / <span class="t-warn">▼ &lt;100點</span> / <span class="t-bad">▼ &gt;100點</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DECISION RULES -->
+<div class="section">
+  <div class="section-title">⑤ 判斷規則</div>
+  <div class="rule-box">
+    <div class="rule-row">
+      <div class="rule-dot green"></div>
+      <div class="rule-text"><strong>全綠或只有 1 個黃</strong>：正常照 AI 建議執行</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot yellow"></div>
+      <div class="rule-text"><strong>2 個以上黃，或 1 個紅</strong>：BUY 建議保守執行或減半，SELL 建議正常執行</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot red"></div>
+      <div class="rule-text"><strong>SOX 跌 &gt;2% 或 VIX &gt;25 或台指期跌 &gt;100點</strong>：當天所有 BUY 建議直接 SKIP，持股 SELL 建議可提前執行</div>
+    </div>
+    <div class="rule-row">
+      <div class="rule-dot red"></div>
+      <div class="rule-text"><strong>2 個以上紅</strong>：全部 SKIP，等市場穩定再說</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  僅供個人輔助判斷參考，不構成投資建議<br>
+  最終決策與損益請自行負責
+</footer>
+
+<script>
+  const states = {};
+  const weights = { ok: 0, warn: 1, danger: 2 };
+  const cards = ['c-dow','c-nas','c-sox','c-vix','c-nvda','c-dxy','c-jpy','c-txi'];
+
+  function setCard(id, state, btn) {
+    // Remove active from siblings
+    const card = document.getElementById(id);
+    card.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Update card border class
+    card.className = 'card ' + state;
+
+    states[id] = state;
+    updateScore();
+  }
+
+  function updateScore() {
+    const filled = Object.keys(states).length;
+    if (filled < cards.length) {
+      document.getElementById('scoreNum').textContent = '—';
+      document.getElementById('scoreHint').textContent = `還有 ${cards.length - filled} 個指標未標記`;
+      document.getElementById('scoreFill').style.width = '0%';
+      document.getElementById('verdictText').textContent = '尚未完成檢查';
+      document.getElementById('verdictText').className = 'verdict-text';
+      document.getElementById('verdictHint').textContent = '請依序標記所有指標';
+      document.getElementById('verdictIcon').textContent = '📋';
+      return;
+    }
+
+    const dangerCount = Object.values(states).filter(s => s === 'danger').length;
+    const warnCount = Object.values(states).filter(s => s === 'warn').length;
+
+    // Check critical singles
+    const soxDanger = states['c-sox'] === 'danger';
+    const vixDanger = states['c-vix'] === 'danger';
+    const txiDanger = states['c-txi'] === 'danger';
+    const criticalHit = soxDanger || vixDanger || txiDanger;
+
+    const score = dangerCount * 2 + warnCount;
+    const maxScore = cards.length * 2;
+    const pct = Math.round((score / maxScore) * 100);
+
+    document.getElementById('scoreNum').textContent = score;
+
+    const fill = document.getElementById('scoreFill');
+    fill.style.width = pct + '%';
+
+    let verdict, hint, icon, cls;
+
+    if (dangerCount >= 2 || (criticalHit && dangerCount >= 1)) {
+      verdict = '全部 SKIP，等待觀望';
+      hint = '市場風險過高，今日建議完全不執行 BUY，持股可視情況提前出場';
+      icon = '🔴';
+      cls = 'stop';
+      fill.style.background = '#ff3355';
+      document.getElementById('scoreNum').style.color = '#ff3355';
+    } else if (criticalHit || dangerCount === 1 || warnCount >= 2) {
+      verdict = 'BUY 保守或 SKIP，SELL 正常執行';
+      hint = '出現警示訊號，BUY 建議減半或跳過，已持有的 SELL 建議可正常執行';
+      icon = '🟡';
+      cls = 'caution';
+      fill.style.background = '#ffcc00';
+      document.getElementById('scoreNum').style.color = '#ffcc00';
+    } else {
+      verdict = '正常照 AI 建議執行';
+      hint = '市場訊號良好，可參考昨晚 AI 分析報告正常操作';
+      icon = '🟢';
+      cls = 'go';
+      fill.style.background = '#00ff88';
+      document.getElementById('scoreNum').style.color = '#00ff88';
+    }
+
+    document.getElementById('verdictText').textContent = verdict;
+    document.getElementById('verdictText').className = 'verdict-text ' + cls;
+    document.getElementById('verdictHint').textContent = hint;
+    document.getElementById('verdictIcon').textContent = icon;
+    document.getElementById('scoreHint').textContent = `警示點 ${score} / ${maxScore}`;
+  }
+
+  function resetAll() {
+    cards.forEach(id => {
+      const card = document.getElementById(id);
+      card.className = 'card';
+      card.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+      delete states[id];
+    });
+    document.getElementById('scoreNum').textContent = '—';
+    document.getElementById('scoreNum').style.color = 'var(--text)';
+    document.getElementById('scoreHint').textContent = '請完成所有指標後查看';
+    document.getElementById('scoreFill').style.width = '0%';
+    document.getElementById('scoreFill').style.background = '';
+    document.getElementById('verdictText').textContent = '尚未完成檢查';
+    document.getElementById('verdictText').className = 'verdict-text';
+    document.getElementById('verdictHint').textContent = '請依序標記上方所有指標';
+    document.getElementById('verdictIcon').textContent = '📋';
+  }
+</script>
+</body>
+</html>
